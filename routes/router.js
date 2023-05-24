@@ -4,8 +4,8 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser')
 
 const {checkCredentials, validateSession} = require("../middlewares");
-const {User, loginData} =  require("../modal");
-const { Op } = require("sequelize");
+const {User} =  require("../modal");
+const { Op, Sequelize } = require("sequelize");
 
 router.use(cookieParser())
 
@@ -52,19 +52,28 @@ router.get("/loggedData", async(req,res)=>{
     let {page,limit} = req.query;
     limit = limit || 3;
     const offset = (page-1)*limit || 0;
-    const data =  await loginData.findAll({limit,offset})
+    const data =  await User.findAll({
+        limit,
+        offset, 
+        attributes:["name",["email","userEmail"]]
+    })
     res.send(data);
 })
 
 router.get("/findbyname",async(req,res)=>{
     const {name} = req.query;
-    const data = await loginData.findAll(
+    const data = await User.findAll(
         {
             where:{
-                name:{
-                    [Op.like]:`%${name}`
+                email:{
+                    [Op.like]:`${name}%`
                 }
-            }
+            },
+            attributes:{
+                exclude:["password"]
+            },
+            group:["users.user_id"]
+            
         });
     res.send(data)
 })
